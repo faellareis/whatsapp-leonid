@@ -5,78 +5,87 @@ async function DadosContatos(numero) {
 
     try {
         const response = await fetch(url)
-        if (!response.ok) {
-            throw new Error(`Erro ${response.status}: ${response.statusText}`)
+        if (response.status === 200) {
+            const data = await response.json()
+            const contatos = document.getElementById('conversasLista')
+            
+            data.lista.forEach(item => {
+                const nomeContato = document.createElement('h2') 
+                nomeContato.textContent = item.name
+                
+                contatos.appendChild(nomeContato)
+            })
         }
-        const dados = await response.json()
-        return dados.dados_contato
     } catch (erro) {
         console.error("Erro ao buscar contatos:", erro)
         alert("Erro ao buscar contatos. Verifique se a API está ativa e o número está correto.")
-        return []
+        return
     }
 }
 
-async function getFiltroContatos(numero, contato) {
-    const url = `http://localhost:8080/v1/whatsapp/filtro?numero=${numero}&contato=${contato}`
+DadosContatos('11987876567')
 
-    try {
-        const response = await fetch(url)
-        if (!response.ok) {
-            throw new Error(`Erro ${response.status}: ${response.statusText}`)
-        }
-        const dados = await response.json()
-        return dados.conversas[0].conversas
-    } catch (erro) {
-        console.error("Erro ao buscar conversas:", erro)
-        alert("Erro ao buscar conversas. Certifique-se de que a API está rodando corretamente.")
-        return []
-    }
+const getFiltroContatos = async (name) => {
+	const url = `http://localhost:8080/v1/whatsapp/filtro?numero=11987876567&name=${name}`
+	const response = await fetch(url)
+	const data = await response.json()
+
+	if (response.status === 200 && data.contato.length === 1) {
+		inicial_screen.replaceChildren('')
+		inicial_screen.style.backgroundColor = 'whitesmoke'
+
+		data.contato.forEach((item) => {
+			item.mensagens.forEach((messages) => {
+				const contentAllMe = document.createElement('div')
+				const contentMe = document.createElement('div')
+				const contentChatsMe = document.createElement('p')
+				const talkTimeMe = document.createElement('p')
+
+				const contentAllContact = document.createElement('div')
+				const contentContact = document.createElement('div')
+				const contentChatsContact = document.createElement('p')
+				const talkTimeContact = document.createElement('p')
+				const nameChatContact = document.createElement('p')
+
+				contentAllMe.classList.add('content_all_me')
+				contentMe.classList.add('messages', 'sender_me')
+				contentAllContact.classList.add('content_all_contact')
+				contentContact.classList.add('messages', 'sender_contact')
+
+				if (messages.sender == 'me') {
+					contentChatsMe.textContent = messages.content
+					talkTimeMe.textContent = messages.time
+					contentMe.appendChild(contentChatsMe)
+					contentMe.appendChild(talkTimeMe)
+					contentAllMe.appendChild(contentMe)
+					inicial_screen.appendChild(contentAllMe)
+				} else {
+					const div = document.createElement('div')
+
+					contentChatsContact.textContent = messages.content
+					talkTimeContact.textContent = messages.time
+					nameChatContact.textContent = messages.sender
+
+					div.appendChild(contentChatsContact)
+					div.appendChild(talkTimeContact)
+					contentContact.appendChild(div)
+					contentContact.appendChild(nameChatContact)
+					contentAllContact.appendChild(contentContact)
+					inicial_screen.appendChild(contentAllContact)
+				}
+			})
+		})
+	} else {
+		alert('não foi possível acessar as conversas com este usuario!')
+	}
 }
 
-
-
-async function preencherConversas(contato) {
-    const numero = document.getElementById('numero').value
-    const mensagens = await getFiltroContatos(numero, contato)
-    const chatBox = document.getElementById('chat')
-
-    document.getElementById('nomeContato').textContent = contato
-    chatBox.replaceChildren()
-
-    mensagens.forEach(mensagem => {
-        const msgDiv = document.createElement('div')
-        msgDiv.textContent = `${mensagem.sender}: ${mensagem.content} (${mensagem.time})`
-        msgDiv.classList.add(mensagem.sender === "me" ? "mensagem-enviada" : "mensagem-recebida")
-        chatBox.appendChild(msgDiv)
-    })
-}
-
-async function preencherContatos() {
-    const numero = document.getElementById('numero').value
-    const contatos = await DadosContatos(numero) // Função para buscar contatos pelo número
-    const galeria = document.getElementById('conversasLista')
-
-    galeria.replaceChildren()
-
-    contatos.forEach(contato => {
-        const contatoDiv = document.createElement('div')
-        contatoDiv.classList.add('contato-item')
-        contatoDiv.addEventListener('click', () => preencherConversas(contato.name))
-
-        const img = document.createElement('img')
-        img.src = './img/user.png'
-        img.alt = contato.name
-
-        const nome = document.createElement('span')
-        nome.textContent = contato.name
-        nome.classList.add('contato-nome')
-
-        contatoDiv.appendChild(img)
-        contatoDiv.appendChild(nome)
-        galeria.appendChild(contatoDiv)
-    })
-}
-
-
-document.getElementById('pesquisar').addEventListener('click', preencherContatos)
+contacts.addEventListener('click', (event) => {
+	const executegetFiltroContatos = event.target.getAttribute('data-name')
+	contacts.style.pointerEvents = 'none'
+	setTimeout(() => {
+		contacts.style.pointerEvents = 'all'
+	}, 700)
+	getFiltroContatos(executegetFiltroContatos)
+})
+// document.getElementById('pesquisar').addEventListener('click', preencherContatos)
