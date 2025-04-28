@@ -1,91 +1,104 @@
-'use strict'
+'use strict';
 
 async function DadosContatos(numero) {
-    const url = `http://localhost:8080/v1/whatsapp/contatos/${numero}`
+    const url = `http://localhost:8080/v1/whatsapp/contatos/${numero}`;
 
     try {
-        const response = await fetch(url)
+        const response = await fetch(url);
         if (response.status === 200) {
-            const data = await response.json()
-            const contatos = document.getElementById('conversasLista')
-            
+            const data = await response.json();
+            const contatos = document.getElementById('conversasLista');
+            contatos.innerHTML = ''; // Limpar antes de adicionar
+
             data.lista.forEach(item => {
-                const nomeContato = document.createElement('h2') 
-                nomeContato.textContent = item.name
-                
-                contatos.appendChild(nomeContato)
-            })
+                const nomeContato = document.createElement('h2');
+                nomeContato.textContent = item.name;
+                nomeContato.classList.add('contato'); // opcional para estilizar
+                nomeContato.addEventListener('click', () => {
+                    carregarMensagens(numero, item.name);
+                });
+
+                contatos.appendChild(nomeContato);
+            });
         }
     } catch (erro) {
-        console.error("Erro ao buscar contatos:", erro)
-        alert("Erro ao buscar contatos. Verifique se a API está ativa e o número está correto.")
-        return
+        console.error("Erro ao buscar contatos:", erro);
+        alert("Erro ao buscar contatos. Verifique se a API está ativa e o número está correto.");
+        return;
     }
 }
 
-DadosContatos('11987876567')
+async function carregarMensagens(numero, nomeContato) {
+    const url = `http://localhost:8080/v1/whatsapp/filtro?numero=${numero}&name=${encodeURIComponent(nomeContato)}`;
 
-const getFiltroContatos = async (name) => {
-	const url = `http://localhost:8080/v1/whatsapp/filtro?numero=11987876567&name=${name}`
-	const response = await fetch(url)
-	const data = await response.json()
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
 
-	if (response.status === 200 && data.contato.length === 1) {
-		inicial_screen.replaceChildren('')
-		inicial_screen.style.backgroundColor = 'whitesmoke'
+        console.log(data); // Verificar o que a API está retornando
 
-		data.contato.forEach((item) => {
-			item.mensagens.forEach((messages) => {
-				const contentAllMe = document.createElement('div')
-				const contentMe = document.createElement('div')
-				const contentChatsMe = document.createElement('p')
-				const talkTimeMe = document.createElement('p')
+        if (response.status === 200) {
+            const chat = document.getElementById('chat');
+            const titulo = document.getElementById('nomeContato');
 
-				const contentAllContact = document.createElement('div')
-				const contentContact = document.createElement('div')
-				const contentChatsContact = document.createElement('p')
-				const talkTimeContact = document.createElement('p')
-				const nameChatContact = document.createElement('p')
+            titulo.textContent = nomeContato;
+            chat.innerHTML = ''; // Limpa o chat antes de colocar as novas mensagens
 
-				contentAllMe.classList.add('content_all_me')
-				contentMe.classList.add('messages', 'sender_me')
-				contentAllContact.classList.add('content_all_contact')
-				contentContact.classList.add('messages', 'sender_contact')
+            let mensagens = [];
 
-				if (messages.sender == 'me') {
-					contentChatsMe.textContent = messages.content
-					talkTimeMe.textContent = messages.time
-					contentMe.appendChild(contentChatsMe)
-					contentMe.appendChild(talkTimeMe)
-					contentAllMe.appendChild(contentMe)
-					inicial_screen.appendChild(contentAllMe)
-				} else {
-					const div = document.createElement('div')
+            // Acesse as mensagens corretamente no formato da resposta fornecida
+            if (data && Array.isArray(data) && data.length > 0) {
+                // Verificando a estrutura de dados e pegando as mensagens
+                data.forEach(item => {
+                    if (item.contato === nomeContato) {
+                        mensagens = item.mensagens;  // Acesse o campo "mensagens"
+                    }
+                });
+            }
 
-					contentChatsContact.textContent = messages.content
-					talkTimeContact.textContent = messages.time
-					nameChatContact.textContent = messages.sender
+            if (mensagens.length > 0) {
+                mensagens.forEach(msg => {
+                    const mensagemElement = document.createElement('div');
+                    mensagemElement.classList.add('mensagem');
 
-					div.appendChild(contentChatsContact)
-					div.appendChild(talkTimeContact)
-					contentContact.appendChild(div)
-					contentContact.appendChild(nameChatContact)
-					contentAllContact.appendChild(contentContact)
-					inicial_screen.appendChild(contentAllContact)
-				}
-			})
-		})
-	} else {
-		alert('não foi possível acessar as conversas com este usuario!')
-	}
+                    const textoMsg = document.createElement('p');
+                    textoMsg.textContent = msg.content || "Mensagem sem texto";  // Acesso correto ao campo "content"
+                    mensagemElement.appendChild(textoMsg);
+
+                    if (msg.sender) {
+                        const senderElement = document.createElement('small');
+                        senderElement.textContent = `De: ${msg.sender}`;
+                        mensagemElement.appendChild(senderElement);
+                    }
+
+                    if (msg.time) {
+                        const timeElement = document.createElement('small');
+                        timeElement.textContent = ` - ${msg.time}`;
+                        mensagemElement.appendChild(timeElement);
+                    }
+
+                    chat.appendChild(mensagemElement);
+                });
+
+                // Desce o scroll até a última mensagem
+                chat.scrollTop = chat.scrollHeight;
+            } else {
+                alert('Não há mensagens para este contato.');
+            }
+        }
+    } catch (erro) {
+        console.error("Erro ao carregar mensagens:", erro);
+        alert("Erro ao carregar mensagens.");
+    }
 }
 
-contacts.addEventListener('click', (event) => {
-	const executegetFiltroContatos = event.target.getAttribute('data-name')
-	contacts.style.pointerEvents = 'none'
-	setTimeout(() => {
-		contacts.style.pointerEvents = 'all'
-	}, 700)
-	getFiltroContatos(executegetFiltroContatos)
-})
-// document.getElementById('pesquisar').addEventListener('click', preencherContatos)
+
+// Buscar contatos ao clicar no botão
+document.getElementById('pesquisar').addEventListener('click', () => {
+    const numero = document.getElementById('numero').value;
+    if (numero) {
+        DadosContatos(numero);
+    } else {
+        alert('Digite um número para buscar contatos.');
+    }
+});

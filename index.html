@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,9 +7,9 @@
     <link rel="stylesheet" href="style.css">
     <script src="app.js" defer></script>
 </head>
-
 <body>
     <div class="aplicativo-container">
+        <!-- Barra lateral de contatos -->
         <div class="barra-lateral">
             <header class="cabecalho-barra-lateral">
                 <h3>CONVERSAS</h3>
@@ -21,16 +20,21 @@
                 <button id="pesquisar">Buscar contatos</button>
             </div>
 
-            <div class="lista-conversas" id="conversasLista"></div>
+            <div class="lista-conversas" id="conversasLista">
+                <!-- Aqui aparecem os contatos -->
+            </div>
         </div>
 
+        <!-- Área do chat -->
         <div class="area-chat">
             <div class="cabecalho-chat">
                 <h3 id="nomeContato">Selecione uma conversa</h3>
             </div>
+
             <div class="mensagens" id="chat">
                 <p>Clique em um contato para ver as mensagens.</p>
             </div>
+
             <div class="entrada-mensagem">
                 <input type="text" id="entradaMensagem" placeholder="Digite uma mensagem...">
                 <button id="botaoEnviar">Enviar</button>
@@ -38,5 +42,4 @@
         </div>
     </div>
 </body>
-
 </html>
